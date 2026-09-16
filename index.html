@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Library Management System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #222;
+        }
+
+        header {
+            background: #243b55;
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+
+        header h1 {
+            margin: 0 0 10px;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 25px auto;
+            padding: 0 15px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            color: #243b55;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 11px 17px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            color: white;
+            background: #243b55;
+            font-size: 14px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .edit {
+            background: #e0a800;
+        }
+
+        .delete {
+            background: #d9534f;
+        }
+
+        .cancel {
+            background: #6c757d;
+        }
+
+        .book {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .book h3 {
+            margin-top: 0;
+            color: #243b55;
+        }
+
+        .empty {
+            color: #777;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .message {
+            color: green;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 24px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            button {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>📚 Library Management System</h1>
+    <p>Manage Books Easily</p>
+</header>
+
+<div class="container">
+
+    <!-- Add / Edit Book Form -->
+    <div class="card">
+
+        <h2 id="formTitle">Add New Book</h2>
+
+        <form id="bookForm">
+
+            <input
+                type="text"
+                id="title"
+                placeholder="Enter Book Title"
+                required
+            >
+
+            <input
+                type="text"
+                id="author"
+                placeholder="Enter Author Name"
+                required
+            >
+
+            <input
+                type="text"
+                id="isbn"
+                placeholder="Enter ISBN Number"
+                required
+            >
+
+            <button type="submit" id="submitBtn">
+                Add Book
+            </button>
+
+            <button
+                type="button"
+                id="cancelBtn"
+                class="cancel"
+                style="display:none"
+            >
+                Cancel
+            </button>
+
+        </form>
+
+        <p id="message" class="message"></p>
+
+    </div>
+
+    <!-- Book List -->
+    <div class="card">
+
+        <h2>Book List</h2>
+
+        <input
+            type="text"
+            id="search"
+            placeholder="Search by title, author or ISBN..."
+        >
+
+        <div id="bookList"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+    // Load books from browser storage
+    let books = JSON.parse(
+        localStorage.getItem("libraryBooks")
+    ) || [];
+
+    let editId = null;
+
+    const form = document.getElementById("bookForm");
+
+    const titleInput = document.getElementById("title");
+
+    const authorInput = document.getElementById("author");
+
+    const isbnInput = document.getElementById("isbn");
+
+    const bookList = document.getElementById("bookList");
+
+    const searchInput = document.getElementById("search");
+
+    const submitBtn = document.getElementById("submitBtn");
+
+    const cancelBtn = document.getElementById("cancelBtn");
+
+    const formTitle = document.getElementById("formTitle");
+
+    const message = document.getElementById("message");
+
+
+    // Save books
+    function saveBooks() {
+
+        localStorage.setItem(
+            "libraryBooks",
+            JSON.stringify(books)
+        );
+
+    }
+
+
+    // Show success message
+    function showMessage(text) {
+
+        message.textContent = text;
+
+        setTimeout(function() {
+            message.textContent = "";
+        }, 2000);
+
+    }
+
+
+    // Display books
+    function displayBooks() {
+
+        const searchText = searchInput.value
+            .toLowerCase()
+            .trim();
+
+        const filteredBooks = books.filter(function(book) {
+
+            return (
+                book.title.toLowerCase().includes(searchText) ||
+                book.author.toLowerCase().includes(searchText) ||
+                book.isbn.toLowerCase().includes(searchText)
+            );
+
+        });
+
+        bookList.innerHTML = "";
+
+        if (filteredBooks.length === 0) {
+
+            bookList.innerHTML =
+                "<p class='empty'>No books found.</p>";
+
+            return;
+
+        }
+
+        filteredBooks.forEach(function(book) {
+
+            const div = document.createElement("div");
+
+            div.className = "book";
+
+            const heading = document.createElement("h3");
+
+            heading.textContent = book.title;
+
+            const author = document.createElement("p");
+
+            author.textContent =
+                "Author: " + book.author;
+
+            const isbn = document.createElement("p");
+
+            isbn.textContent =
+                "ISBN: " + book.isbn;
+
+            const editButton = document.createElement("button");
+
+            editButton.textContent = "Edit";
+
+            editButton.className = "edit";
+
+            editButton.onclick = function() {
+
+                editBook(book.id);
+
+            };
+
+            const deleteButton = document.createElement("button");
+
+            deleteButton.textContent = "Delete";
+
+            deleteButton.className = "delete";
+
+            deleteButton.onclick = function() {
+
+                deleteBook(book.id);
+
+            };
+
+            div.appendChild(heading);
+
+            div.appendChild(author);
+
+            div.appendChild(isbn);
+
+            div.appendChild(editButton);
+
+            div.appendChild(deleteButton);
+
+            bookList.appendChild(div);
+
+        });
+
+    }
+
+
+    // Create and Update
+    form.addEventListener("submit", function(event) {
+
+        event.preventDefault();
+
+        const title = titleInput.value.trim();
+
+        const author = authorInput.value.trim();
+
+        const isbn = isbnInput.value.trim();
+
+        if (editId === null) {
+
+            const newBook = {
+
+                id: Date.now(),
+
+                title: title,
+
+                author: author,
+
+                isbn: isbn
+
+            };
+
+            books.push(newBook);
+
+            showMessage("Book added successfully!");
+
+        } else {
+
+            const book = books.find(function(book) {
+
+                return book.id === editId;
+
+            });
+
+            if (book) {
+
+                book.title = title;
+
+                book.author = author;
+
+                book.isbn = isbn;
+
+            }
+
+            editId = null;
+
+            submitBtn.textContent = "Add Book";
+
+            formTitle.textContent = "Add New Book";
+
+            cancelBtn.style.display = "none";
+
+            showMessage("Book updated successfully!");
+
+        }
+
+        saveBooks();
+
+        displayBooks();
+
+        form.reset();
+
+    });
+
+
+    // Edit book
+    function editBook(id) {
+
+        const book = books.find(function(book) {
+
+            return book.id === id;
+
+        });
+
+        if (!book) return;
+
+        titleInput.value = book.title;
+
+        authorInput.value = book.author;
+
+        isbnInput.value = book.isbn;
+
+        editId = id;
+
+        submitBtn.textContent = "Update Book";
+
+        formTitle.textContent = "Edit Book";
+
+        cancelBtn.style.display = "inline-block";
+
+    }
+
+
+    // Delete book
+    function deleteBook(id) {
+
+        const confirmDelete = confirm(
+            "Are you sure you want to delete this book?"
+        );
+
+        if (!confirmDelete) return;
+
+        books = books.filter(function(book) {
+
+            return book.id !== id;
+
+        });
+
+        saveBooks();
+
+        displayBooks();
+
+        showMessage("Book deleted successfully!");
+
+    }
+
+
+    // Cancel edit
+    cancelBtn.onclick = function() {
+
+        editId = null;
+
+        form.reset();
+
+        submitBtn.textContent = "Add Book";
+
+        formTitle.textContent = "Add New Book";
+
+        cancelBtn.style.display = "none";
+
+    };
+
+
+    // Search
+    searchInput.addEventListener(
+        "input",
+        displayBooks
+    );
+
+
+    // Initial display
+    displayBooks();
+
+</script>
+
+</body>
+</html>
